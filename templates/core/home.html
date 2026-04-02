@@ -1,0 +1,273 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}DishDecode{% endblock %}
+{% block content %}
+
+<!-- HERO -->
+<section class="hero-section" id="home">
+  <div class="hero-bg">
+    <div class="grid-bg"></div>
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+    <div class="blob blob-3"></div>
+  </div>
+  <div class="container">
+    <div class="row align-items-center">
+      <div class="col-lg-6 hero-content">
+        <div class="hero-badge"><span class="dot"></span> AI-Powered Recipe Intelligence</div>
+        <h1 class="hero-title">Decode Food<br>Videos Into<br><span class="gradient-text">Recipes</span></h1>
+        <p class="hero-subtitle">Paste any YouTube or Instagram Reels food video link and our AI instantly analyzes the content to generate a complete, structured recipe — ingredients, steps, tools, and more.</p>
+        <form method="post" action="{% url 'submit_video' %}">
+          {% csrf_token %}
+          <div class="hero-input-wrap">
+            {{ form.video_url }}
+            <button type="submit" class="btn-primary-cta">
+              {% if user.is_authenticated %}Decode Now →{% else %}Try it Free →{% endif %}
+            </button>
+          </div>
+        </form>
+        {% if not user.is_authenticated %}
+        <p class="hero-note">🔒 <a href="{% url 'register' %}" style="color:var(--accent-orange);text-decoration:none;">Create free account</a> to decode videos</p>
+        {% else %}
+        <p class="hero-note">✅ Logged in as <span>{{ user.username }}</span> — paste any YouTube or Instagram Reels link</p>
+        {% endif %}
+        <div class="mt-3">
+          <a href="#how-it-works" class="btn-secondary-cta">▶ See how it works</a>
+        </div>
+      </div>
+      <div class="col-lg-6 d-none d-lg-flex justify-content-center">
+        <div class="preview-card-wrap">
+          <div class="preview-card">
+            <div class="preview-header">
+              <div class="preview-dish">Tonkotsu Ramen</div>
+              <div class="preview-badge">✓ Decoded</div>
+            </div>
+            <div class="preview-stat"><span class="preview-stat-label">Cuisine</span><span class="preview-stat-value">Japanese</span></div>
+            <div class="preview-stat"><span class="preview-stat-label">Cook Time</span><span class="preview-stat-value">45 min</span></div>
+            <div class="preview-stat"><span class="preview-stat-label">Result Type</span><span class="preview-stat-value">Extracted Recipe</span></div>
+            <div class="preview-confidence">
+              <div class="d-flex justify-content-between mb-1">
+                <small style="color:var(--text-muted);font-size:0.75rem;">AI Confidence</small>
+                <strong style="color:var(--accent-orange);font-size:0.78rem;">87%</strong>
+              </div>
+              <div class="confidence-bar-bg"><div class="confidence-bar-fill"></div></div>
+            </div>
+            <div class="preview-ingredients">
+              <span class="ing-chip">Ramen noodles</span>
+              <span class="ing-chip">Pork broth</span>
+              <span class="ing-chip">Chashu</span>
+              <span class="ing-chip">Soft egg</span>
+              <span class="ing-chip">Nori</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- STATS -->
+<section class="stats-section">
+  <div class="container">
+    <div class="row">
+      <div class="col-6 col-md-3 reveal">
+        <div class="stat-card">
+          <div class="stat-number" data-target="{{ total_videos|default:'0' }}" data-suffix="+">0</div>
+          <div class="stat-label">Videos Analyzed</div>
+        </div>
+      </div>
+      <div class="col-6 col-md-3 reveal">
+        <div class="stat-card">
+          <div class="stat-number" data-target="{{ total_recipes|default:'0' }}" data-suffix="+">0</div>
+          <div class="stat-label">Recipes Generated</div>
+        </div>
+      </div>
+      <div class="col-6 col-md-3 reveal">
+        <div class="stat-card">
+          <div class="stat-number" data-target="{{ avg_confidence|default:'85' }}" data-suffix="%">0</div>
+          <div class="stat-label">Avg. Accuracy</div>
+        </div>
+      </div>
+      <div class="col-6 col-md-3 reveal">
+        <div class="stat-card">
+          <div class="stat-number" data-target="{{ total_saved|default:'0' }}" data-suffix="+">0</div>
+          <div class="stat-label">Saved Dishes</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section class="section" id="how-it-works">
+  <div class="container">
+    <div class="text-center mb-5 reveal">
+      <div class="section-tag">Process</div>
+      <h2 class="section-title">How DishDecode Works</h2>
+      <p class="section-subtitle mx-auto">From video link to full recipe in seconds. Our AI does all the heavy lifting.</p>
+    </div>
+    <div class="row g-4">
+      <div class="col-md-6 reveal">
+        <div class="step-card">
+          <div class="step-number">01</div>
+          <div class="step-content">
+            <h3>Paste a Video Link</h3>
+            <p>Copy any YouTube food or cooking video URL and paste it into the DishDecode input. We support all YouTube formats including Shorts.</p>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-6 reveal">
+        <div class="step-card">
+          <div class="step-number">02</div>
+          <div class="step-content">
+            <h3>AI Analyzes the Food</h3>
+            <p>Our AI engine examines visual content, cooking techniques, and food characteristics to identify the dish and its components.</p>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-6 reveal">
+        <div class="step-card">
+          <div class="step-number">03</div>
+          <div class="step-content">
+            <h3>Recipe is Generated</h3>
+            <p>Based on the analysis, DishDecode produces a structured recipe with ingredients, step-by-step instructions, tools, and timing.</p>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-6 reveal">
+        <div class="step-card">
+          <div class="step-number">04</div>
+          <div class="step-content">
+            <h3>Save and Reference</h3>
+            <p>Save recipes to your personal collection, view your history, and access your decoded recipes anytime from any device.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section class="section" id="features" style="background:rgba(255,255,255,0.01);">
+  <div class="container">
+    <div class="text-center mb-5 reveal">
+      <div class="section-tag">Capabilities</div>
+      <h2 class="section-title">What DishDecode Can Do</h2>
+      <p class="section-subtitle mx-auto">Powered by advanced AI to turn any food video into actionable recipe intelligence.</p>
+    </div>
+    <div class="row g-4">
+      <div class="col-md-6 col-lg-3 reveal">
+        <div class="glass-card">
+          <div class="card-icon">🔍</div>
+          <h3>Dish Detection</h3>
+          <p>Identifies the dish from visual cues, cooking style, and food characteristics with high accuracy.</p>
+        </div>
+      </div>
+      <div class="col-md-6 col-lg-3 reveal">
+        <div class="glass-card">
+          <div class="card-icon">🥕</div>
+          <h3>Ingredient Prediction</h3>
+          <p>Estimates likely ingredients based on the dish type, visible components, and culinary patterns.</p>
+        </div>
+      </div>
+      <div class="col-md-6 col-lg-3 reveal">
+        <div class="glass-card">
+          <div class="card-icon">📋</div>
+          <h3>Recipe Generation</h3>
+          <p>Produces clear, step-by-step cooking instructions tailored to the identified dish and technique.</p>
+        </div>
+      </div>
+      <div class="col-md-6 col-lg-3 reveal">
+        <div class="glass-card">
+          <div class="card-icon">⏱️</div>
+          <h3>Time Estimation</h3>
+          <p>Provides realistic cooking time estimates based on dish complexity and technique requirements.</p>
+        </div>
+      </div>
+      <div class="col-md-6 col-lg-3 reveal">
+        <div class="glass-card">
+          <div class="card-icon">📊</div>
+          <h3>Confidence Score</h3>
+          <p>Shows AI confidence as a percentage so you know exactly how reliable the generated recipe is.</p>
+        </div>
+      </div>
+      <div class="col-md-6 col-lg-3 reveal">
+        <div class="glass-card">
+          <div class="card-icon">💾</div>
+          <h3>Saved History</h3>
+          <p>Save favorite recipes to your personal collection and access your analysis history anytime.</p>
+        </div>
+      </div>
+      <div class="col-md-6 col-lg-3 reveal">
+        <div class="glass-card">
+          <div class="card-icon">🛠️</div>
+          <h3>Tools Detection</h3>
+          <p>Identifies the kitchen equipment and cooking tools required for the recipe preparation.</p>
+        </div>
+      </div>
+      <div class="col-md-6 col-lg-3 reveal">
+        <div class="glass-card">
+          <div class="card-icon">🌍</div>
+          <h3>Cuisine Tagging</h3>
+          <p>Automatically identifies the cuisine type and cultural origin of the detected dish.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SUBMIT SECTION -->
+<section class="section" style="background: var(--gradient-subtle); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);">
+  <div class="container text-center">
+    <div class="reveal">
+      <div class="section-tag">Try It Now</div>
+      <h2 class="section-title">Ready to Decode Your First Recipe?</h2>
+      <p class="section-subtitle mx-auto mb-4">Paste any YouTube or Instagram Reels food video link below and let our AI do the rest.</p>
+      {% if user.is_authenticated %}
+      <form method="post" action="{% url 'submit_video' %}" style="max-width:560px;margin:0 auto;">
+        {% csrf_token %}
+        <div class="hero-input-wrap" style="max-width:100%;">
+          {{ form.video_url }}
+          <button type="submit" class="btn-primary-cta">Decode Now →</button>
+        </div>
+      </form>
+      {% else %}
+      <a href="{% url 'register' %}" class="btn-primary-cta" style="display:inline-block;text-decoration:none;">Start for Free →</a>
+      {% endif %}
+    </div>
+  </div>
+</section>
+
+<!-- FAQ -->
+<section class="section" id="faq">
+  <div class="container">
+    <div class="text-center mb-5 reveal">
+      <div class="section-tag">FAQ</div>
+      <h2 class="section-title">Common Questions</h2>
+    </div>
+    <div style="max-width:680px;margin:0 auto;">
+      <div class="faq-item reveal">
+        <button class="faq-question">What types of videos does DishDecode support? <span class="faq-icon">+</span></button>
+        <div class="faq-answer"><p>Currently DishDecode supports YouTube videos and YouTube Shorts. We're actively working on adding support for Instagram Reels, TikTok, and other platforms in upcoming releases.</p></div>
+      </div>
+      <div class="faq-item reveal">
+        <button class="faq-question">How accurate is the AI recipe generation? <span class="faq-icon">+</span></button>
+        <div class="faq-answer"><p>Our AI achieves an average confidence score of 87% across all analyzed videos. Results are clearly labeled as either "Extracted Recipe" (from process analysis) or "Estimated Recipe" (from dish recognition). We never claim 100% exactness.</p></div>
+      </div>
+      <div class="faq-item reveal">
+        <button class="faq-question">What's the difference between Extracted and Estimated recipes? <span class="faq-icon">+</span></button>
+        <div class="faq-answer"><p>An Extracted Recipe is generated when cooking process steps are clearly visible in the video — the AI follows along and captures the method. An Estimated Recipe is generated when only the final food is shown — the AI recognizes the dish and generates a standard recipe for it.</p></div>
+      </div>
+      <div class="faq-item reveal">
+        <button class="faq-question">Can I save and access my recipes later? <span class="faq-icon">+</span></button>
+        <div class="faq-answer"><p>Yes! Registered users can save any recipe result to their personal collection. Your entire analysis history is also stored and searchable from your History page. Create a free account to access these features.</p></div>
+      </div>
+      <div class="faq-item reveal">
+        <button class="faq-question">Is DishDecode free to use? <span class="faq-icon">+</span></button>
+        <div class="faq-answer"><p>DishDecode offers a free tier with access to core recipe generation features. Simply create a free account and start decoding food videos immediately. Premium plans with advanced features are coming soon.</p></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+{% endblock %}

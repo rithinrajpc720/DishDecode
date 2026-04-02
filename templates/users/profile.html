@@ -1,0 +1,89 @@
+{% extends 'base.html' %}
+{% block title %}DishDecode{% endblock %}
+{% block content %}
+<section class="profile-section">
+  <div class="container">
+    <div class="profile-header reveal">
+      <div class="profile-avatar">{{ user.username.0|upper }}</div>
+      <div>
+        <div class="profile-name">{{ user.get_full_name|default:user.username }}</div>
+        <div class="profile-email">{{ user.email }}</div>
+        <div class="d-flex gap-2 mt-2 flex-wrap align-items-center">
+          <span class="badge-cuisine">🔥 DishDecode Member</span>
+          {% if plan %}
+          <span class="plan-badge plan-badge-{{ plan.name }}">{{ plan.display_name }}</span>
+          {% else %}
+          <span class="plan-badge plan-badge-free">Free</span>
+          {% endif %}
+          {% if remaining_generations >= 0 %}
+          <span class="badge-cuisine" style="font-size:0.75rem;">{{ remaining_generations }} generations left</span>
+          {% else %}
+          <span class="badge-cuisine" style="font-size:0.75rem;">Unlimited generations</span>
+          {% endif %}
+        </div>
+        {% if plan and plan.name == 'free' or not plan %}
+        <a href="{% url 'pricing' %}" style="color:var(--accent-orange);font-size:0.82rem;text-decoration:none;margin-top:6px;display:inline-block;">⚡ Upgrade Plan →</a>
+        {% endif %}
+      </div>
+    </div>
+    <div class="row g-3 mb-4">
+      <div class="col-6 col-md-3 reveal">
+        <div class="profile-stat-card">
+          <div class="profile-stat-num">{{ total_analyzed }}</div>
+          <div class="profile-stat-label">Videos Analyzed</div>
+        </div>
+      </div>
+      <div class="col-6 col-md-3 reveal">
+        <div class="profile-stat-card">
+          <div class="profile-stat-num">{{ total_saved }}</div>
+          <div class="profile-stat-label">Recipes Saved</div>
+        </div>
+      </div>
+      <div class="col-6 col-md-3 reveal">
+        <div class="profile-stat-card">
+          <div class="profile-stat-num">{{ user.date_joined|date:"Y" }}</div>
+          <div class="profile-stat-label">Member Since</div>
+        </div>
+      </div>
+      <div class="col-6 col-md-3 reveal">
+        <div class="profile-stat-card">
+          <div class="profile-stat-num">{{ avg_confidence }}%</div>
+          <div class="profile-stat-label">Avg Confidence</div>
+        </div>
+      </div>
+    </div>
+
+    {% if saved_recipes %}
+    <div class="reveal">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h3 style="font-family:'Syne',sans-serif;font-size:1.2rem;font-weight:700;">Recently Saved</h3>
+        <a href="{% url 'recipe_history' %}" style="color:var(--accent-orange);font-size:0.85rem;text-decoration:none;">View All →</a>
+      </div>
+      <div class="row g-3">
+        {% for saved in saved_recipes %}
+        <div class="col-md-6 col-lg-4">
+          <a href="{% url 'recipe_detail' saved.recipe_result.pk %}" class="history-card">
+            <div class="history-card-dish">{{ saved.recipe_result.dish_name }}</div>
+            <div class="d-flex gap-2 mb-2 flex-wrap">
+              <span class="badge-cuisine" style="font-size:0.72rem;padding:3px 10px;">{{ saved.recipe_result.cuisine_type }}</span>
+              <span class="{% if saved.recipe_result.result_type == 'extracted_recipe' %}badge-extracted{% else %}badge-estimated{% endif %}" style="font-size:0.72rem;padding:3px 10px;border-radius:20px;border:1px solid;">
+                {% if saved.recipe_result.result_type == 'extracted_recipe' %}✦ Extracted{% else %}~ Estimated{% endif %}
+              </span>
+            </div>
+            <div class="history-card-meta">{{ saved.saved_at|date:"M d, Y" }}</div>
+          </a>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% else %}
+    <div class="empty-state reveal">
+      <div class="empty-state-icon">🍽️</div>
+      <h3>No saved recipes yet</h3>
+      <p>Start decoding food videos to build your recipe collection.</p>
+      <a href="{% url 'home' %}" class="btn-primary-cta mt-3" style="display:inline-block;text-decoration:none;">Decode a Video →</a>
+    </div>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

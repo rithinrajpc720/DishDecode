@@ -1,0 +1,93 @@
+{% extends 'base.html' %}
+{% block title %}DishDecode{% endblock %}
+{% block content %}
+<section class="analyze-section">
+  <div class="hero-bg"><div class="blob blob-1"></div><div class="blob blob-2"></div></div>
+  <div class="container" style="position:relative;z-index:1;">
+    <div class="analyze-card">
+      <div class="analyze-spinner"></div>
+      <div class="analyze-title">Analyzing Your Video</div>
+      <div class="analyze-subtitle">Our AI is processing the food video content. This takes just a few seconds.</div>
+      <div style="margin-bottom:24px;">
+        <div class="shimmer-line" style="width:70%;"></div>
+        <div class="shimmer-line" style="width:50%;"></div>
+        <div class="shimmer-line" style="width:85%;"></div>
+      </div>
+      <div class="progress-steps" id="progressSteps">
+        <div class="progress-step" id="step1">
+          <div class="step-icon">🎬</div>
+          <div class="step-text">Extracting video frames</div>
+          <div class="step-indicator pending" id="ind1">•</div>
+        </div>
+        <div class="progress-step" id="step2">
+          <div class="step-icon">🔍</div>
+          <div class="step-text">Analyzing food content</div>
+          <div class="step-indicator pending" id="ind2">•</div>
+        </div>
+        <div class="progress-step" id="step3">
+          <div class="step-icon">🧠</div>
+          <div class="step-text">Generating recipe data</div>
+          <div class="step-indicator pending" id="ind3">•</div>
+        </div>
+        <div class="progress-step" id="step4">
+          <div class="step-icon">✨</div>
+          <div class="step-text">Preparing your result</div>
+          <div class="step-indicator pending" id="ind4">•</div>
+        </div>
+      </div>
+      <div id="errorMsg" style="display:none;margin-top:16px;" class="alert-custom alert-error">
+        ⚠️ Analysis failed. <a href="{% url 'home' %}" style="color:var(--accent-orange);">Try again</a>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}
+{% block extra_js %}
+<script>
+const steps = [
+  {el: document.getElementById('step1'), ind: document.getElementById('ind1')},
+  {el: document.getElementById('step2'), ind: document.getElementById('ind2')},
+  {el: document.getElementById('step3'), ind: document.getElementById('ind3')},
+  {el: document.getElementById('step4'), ind: document.getElementById('ind4')},
+];
+let current = 0;
+function advanceStep() {
+  if (current > 0) {
+    steps[current-1].el.classList.remove('active');
+    steps[current-1].el.classList.add('done');
+    steps[current-1].ind.classList.remove('active');
+    steps[current-1].ind.classList.add('done');
+    steps[current-1].ind.textContent = '✓';
+  }
+  if (current < steps.length) {
+    steps[current].el.classList.add('active');
+    steps[current].ind.classList.remove('pending');
+    steps[current].ind.classList.add('active');
+    steps[current].ind.textContent = '';
+    current++;
+  }
+}
+advanceStep();
+setTimeout(() => advanceStep(), 1200);
+setTimeout(() => advanceStep(), 2400);
+setTimeout(() => advanceStep(), 3200);
+
+// Call process endpoint
+setTimeout(() => {
+  fetch('{% url "process_video" video_req.pk %}', {
+    method: 'POST',
+    headers: {'X-CSRFToken': '{{ csrf_token }}', 'Content-Type': 'application/json'}
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.status === 'completed') {
+      advanceStep();
+      setTimeout(() => window.location.href = data.redirect, 600);
+    } else {
+      document.getElementById('errorMsg').style.display = 'block';
+    }
+  })
+  .catch(() => { document.getElementById('errorMsg').style.display = 'block'; });
+}, 3800);
+</script>
+{% endblock %}

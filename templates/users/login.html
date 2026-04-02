@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+{% block title %}DishDecode{% endblock %}
+{% block content %}
+<section class="auth-section">
+  <div class="hero-bg"><div class="blob blob-1"></div><div class="blob blob-2"></div></div>
+  <div class="container" style="position:relative;z-index:1;">
+    <div class="auth-card">
+      <div class="text-center mb-4">
+        <div style="font-size:2rem;margin-bottom:8px;">🔥</div>
+        <div class="auth-title">Welcome Back</div>
+        <div class="auth-subtitle">Sign in to continue decoding recipes</div>
+      </div>
+      {% if form.errors %}
+      <div class="alert-custom alert-error mb-3">⚠️ Invalid username or password. Please try again.</div>
+      {% endif %}
+      <form method="post">
+        {% csrf_token %}
+        <div class="mb-3">
+          <label class="form-label">Username</label>
+          {{ form.username }}
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Password</label>
+          {{ form.password }}
+        </div>
+        <button type="submit" class="btn-submit">Sign In →</button>
+      </form>
+      <div class="auth-link">Don't have an account? <a href="{% url 'register' %}">Create one free</a></div>
+    </div>
+  </div>
+</section>
+{% endblock %}

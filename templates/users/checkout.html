@@ -1,0 +1,73 @@
+{% extends 'base.html' %}
+{% block title %}DishDecode{% endblock %}
+{% block content %}
+<section class="section" style="padding-top:120px;">
+  <div class="container" style="max-width:500px;">
+    <div class="text-center mb-4 reveal">
+      <h2 class="section-title">Complete Payment</h2>
+      <p class="section-subtitle">Upgrading to <strong>{{ plan.display_name }}</strong></p>
+    </div>
+
+    <div class="pricing-card reveal" style="margin-bottom:24px;">
+      <div class="pricing-plan-name">{{ plan.display_name }}</div>
+      <div class="pricing-price">
+        <span class="pricing-currency">₹</span>
+        <span class="pricing-amount">{{ plan.price_monthly|floatformat:0 }}</span>
+        <span class="pricing-period">/month</span>
+      </div>
+      <div class="pricing-limit">
+        {% if plan.generation_limit == -1 %}Unlimited generations{% else %}{{ plan.generation_limit }} generations/month{% endif %}
+      </div>
+      <button id="pay-btn" class="btn-pricing-cta btn-pricing-featured" style="width:100%;cursor:pointer;border:none;">
+        Pay ₹{{ plan.price_monthly|floatformat:0 }} Now
+      </button>
+    </div>
+
+    <div class="text-center">
+      <p style="color:var(--text-muted);font-size:0.8rem;">🔒 Secured by Razorpay. Your payment information is encrypted.</p>
+      <a href="{% url 'pricing' %}" style="color:var(--text-secondary);font-size:0.85rem;text-decoration:none;">← Back to Pricing</a>
+    </div>
+  </div>
+</section>
+
+<form id="payment-form" method="post" action="{% url 'payment_callback' %}" style="display:none;">
+  {% csrf_token %}
+  <input type="hidden" name="razorpay_payment_id" id="razorpay_payment_id">
+  <input type="hidden" name="razorpay_order_id" id="razorpay_order_id">
+  <input type="hidden" name="razorpay_signature" id="razorpay_signature">
+</form>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<script>
+document.getElementById('pay-btn').addEventListener('click', function() {
+    var options = {
+        key: '{{ razorpay_key }}',
+        amount: '{{ order.amount }}',
+        currency: 'INR',
+        name: 'DishDecode',
+        description: '{{ plan.display_name }} Plan - Monthly',
+        order_id: '{{ order.id }}',
+        prefill: {
+            name: '{{ user.get_full_name|default:user.username }}',
+            email: '{{ user.email }}'
+        },
+        theme: {
+            color: '#fb923c'
+        },
+        handler: function(response) {
+            document.getElementById('razorpay_payment_id').value = response.razorpay_payment_id;
+            document.getElementById('razorpay_order_id').value = response.razorpay_order_id;
+            document.getElementById('razorpay_signature').value = response.razorpay_signature;
+            document.getElementById('payment-form').submit();
+        }
+    };
+    var rzp = new Razorpay(options);
+    rzp.on('payment.failed', function(response) {
+        window.location.href = '{% url "pricing" %}';
+    });
+    rzp.open();
+});
+</script>
+{% endblock %}
