@@ -94,7 +94,7 @@
                             <div class="history-card-dish">{{ gen.dish_name }}</div>
                             <div class="d-flex gap-2 mb-2 flex-wrap">
                                 <span class="badge-cuisine" style="font-size:0.72rem;">{{ gen.cuisine_type }}</span>
-                                <span class="badge-extracted" style="font-size:0.72rem;">{{ gen.result_type|replace:"_, "|title }}</span>
+                                <span class="badge-extracted" style="font-size:0.72rem;">{{ gen.get_result_type_display }}</span>
                             </div>
                             <div class="history-card-meta">{{ gen.created_at|date:"M d, Y" }}</div>
                         </a>
