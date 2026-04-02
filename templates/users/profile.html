@@ -30,7 +30,7 @@
             <div class="plan-badge-pro" style="padding:4px 14px; font-size:0.8rem; background:var(--gradient-hero); border-radius:100px; color:#fff; font-weight:800; box-shadow:0 4px 15px rgba(251,146,60,0.3);">{{ plan.display_name|default:"Free" }}</div>
           </div>
           <div class="subscription-status mb-3">
-            <div class="small text-muted mb-1">{{ date_label }}</div>
+            <div class="small mb-1" style="color:var(--text-secondary); opacity:0.8;">{{ date_label }}</div>
             <div class="fw-bold fs-5" style="color:var(--accent-orange);font-family:'Syne',sans-serif;">{{ next_date|date:"M d, Y" }}</div>
           </div>
           {% if plan and plan.generation_limit != -1 %}
