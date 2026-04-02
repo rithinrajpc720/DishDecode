@@ -7,8 +7,8 @@ load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'django-insecure-dishdecode-dev-only-key')
-DEBUG = os.environ.get('DJANGO_DEBUG', 'True').lower() == 'true'
-ALLOWED_HOSTS = os.environ.get('DJANGO_ALLOWED_HOSTS', 'rithinrajpc.pythonanywhere.com,localhost,127.0.0.1,.onrender.com').split(',')
+DEBUG = os.environ.get('DJANGO_DEBUG', 'False').lower() == 'true'
+ALLOWED_HOSTS = ['rithinrajpc.pythonanywhere.com', 'localhost', '127.0.0.1', '.onrender.com']
 INSTALLED_APPS = [
     'django.contrib.admin','django.contrib.auth','django.contrib.contenttypes',
     'django.contrib.sessions','django.contrib.messages','django.contrib.staticfiles',
