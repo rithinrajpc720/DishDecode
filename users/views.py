@@ -57,22 +57,42 @@ class LogoutView(View):
 @method_decorator(login_required, name='dispatch')
 class ProfileView(View):
     def get(self, request):
-        saved = SavedRecipe.objects.filter(user=request.user).select_related('recipe_result')[:6]
+        # Fetching basic stats
         total_analyzed = VideoRequest.objects.filter(user=request.user).count()
         total_saved = SavedRecipe.objects.filter(user=request.user).count()
         avg_conf = RecipeResult.objects.filter(video_request__user=request.user).aggregate(avg=Avg('confidence_score'))['avg']
         avg_confidence = int((avg_conf or 0) * 100) if avg_conf else 0
+
+        # Fetch Subscription Info
         sub, _ = UserSubscription.objects.get_or_create(user=request.user)
         plan = sub.active_plan
         remaining = sub.remaining_generations()
+        
+        # Dynamic Subscription Date (Next Reset or Billing)
+        if plan and plan.name != 'free':
+            next_date = sub.expires_at
+            date_label = "Next Billing"
+        else:
+            # Free tier resets 30 days after last_reset
+            next_date = sub.last_reset + timedelta(days=30)
+            date_label = "Next Reset"
+
+        # Fetch History
+        saved_recipes = SavedRecipe.objects.filter(user=request.user).select_related('recipe_result')[:6]
+        # Generation History = RecipeResults from all video requests, completed
+        gen_history = RecipeResult.objects.filter(video_request__user=request.user).order_by('-created_at')[:6]
+
         return render(request, 'users/profile.html', {
-            'saved_recipes': saved,
             'total_analyzed': total_analyzed,
             'total_saved': total_saved,
             'avg_confidence': avg_confidence,
             'subscription': sub,
             'plan': plan,
             'remaining_generations': remaining,
+            'next_date': next_date,
+            'date_label': date_label,
+            'saved_recipes': saved_recipes,
+            'generation_history': gen_history,
         })
 
 class PricingView(View):

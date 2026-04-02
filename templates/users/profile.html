@@ -1,89 +1,191 @@
 {% extends 'base.html' %}
-{% block title %}DishDecode{% endblock %}
+{% block title %}User Profile - DishDecode{% endblock %}
 {% block content %}
 <section class="profile-section">
   <div class="container">
-    <div class="profile-header reveal">
-      <div class="profile-avatar">{{ user.username.0|upper }}</div>
-      <div>
-        <div class="profile-name">{{ user.get_full_name|default:user.username }}</div>
-        <div class="profile-email">{{ user.email }}</div>
-        <div class="d-flex gap-2 mt-2 flex-wrap align-items-center">
-          <span class="badge-cuisine">🔥 DishDecode Member</span>
-          {% if plan %}
-          <span class="plan-badge plan-badge-{{ plan.name }}">{{ plan.display_name }}</span>
-          {% else %}
-          <span class="plan-badge plan-badge-free">Free</span>
-          {% endif %}
-          {% if remaining_generations >= 0 %}
-          <span class="badge-cuisine" style="font-size:0.75rem;">{{ remaining_generations }} generations left</span>
-          {% else %}
-          <span class="badge-cuisine" style="font-size:0.75rem;">Unlimited generations</span>
-          {% endif %}
+    <div class="row g-4">
+      <!-- Sidebar Navigation -->
+      <div class="col-lg-3">
+        <div class="profile-card reveal mb-4">
+          <div class="text-center mb-4">
+            <div class="profile-avatar mx-auto">{{ user.username.0|upper }}</div>
+            <h3 class="mt-3" style="font-family:'Syne',sans-serif;font-weight:700;font-size:1.2rem;">{{ user.get_full_name|default:user.username }}</h3>
+            <p class="text-muted small">{{ user.email }}</p>
+          </div>
+          <div class="profile-nav-list">
+            <a href="{% url 'home' %}" class="profile-nav-item active">🏠 Dashboard</a>
+            <a href="{% url 'recipe_history' %}" class="profile-nav-item">📜 Full History</a>
+            <a href="{% url 'pricing' %}" class="profile-nav-item">💎 Upgrade Plan</a>
+            <form action="{% url 'logout' %}" method="post" class="mt-2">
+              {% csrf_token %}
+              <button type="submit" class="profile-nav-item w-100 text-start border-0 bg-transparent" style="color:#ff4d4d !important;">🚪 Logout</button>
+            </form>
+          </div>
         </div>
-        {% if plan and plan.name == 'free' or not plan %}
-        <a href="{% url 'pricing' %}" style="color:var(--accent-orange);font-size:0.82rem;text-decoration:none;margin-top:6px;display:inline-block;">⚡ Upgrade Plan →</a>
-        {% endif %}
-      </div>
-    </div>
-    <div class="row g-3 mb-4">
-      <div class="col-6 col-md-3 reveal">
-        <div class="profile-stat-card">
-          <div class="profile-stat-num">{{ total_analyzed }}</div>
-          <div class="profile-stat-label">Videos Analyzed</div>
-        </div>
-      </div>
-      <div class="col-6 col-md-3 reveal">
-        <div class="profile-stat-card">
-          <div class="profile-stat-num">{{ total_saved }}</div>
-          <div class="profile-stat-label">Recipes Saved</div>
-        </div>
-      </div>
-      <div class="col-6 col-md-3 reveal">
-        <div class="profile-stat-card">
-          <div class="profile-stat-num">{{ user.date_joined|date:"Y" }}</div>
-          <div class="profile-stat-label">Member Since</div>
-        </div>
-      </div>
-      <div class="col-6 col-md-3 reveal">
-        <div class="profile-stat-card">
-          <div class="profile-stat-num">{{ avg_confidence }}%</div>
-          <div class="profile-stat-label">Avg Confidence</div>
-        </div>
-      </div>
-    </div>
 
-    {% if saved_recipes %}
-    <div class="reveal">
-      <div class="d-flex justify-content-between align-items-center mb-3">
-        <h3 style="font-family:'Syne',sans-serif;font-size:1.2rem;font-weight:700;">Recently Saved</h3>
-        <a href="{% url 'recipe_history' %}" style="color:var(--accent-orange);font-size:0.85rem;text-decoration:none;">View All →</a>
-      </div>
-      <div class="row g-3">
-        {% for saved in saved_recipes %}
-        <div class="col-md-6 col-lg-4">
-          <a href="{% url 'recipe_detail' saved.recipe_result.pk %}" class="history-card">
-            <div class="history-card-dish">{{ saved.recipe_result.dish_name }}</div>
-            <div class="d-flex gap-2 mb-2 flex-wrap">
-              <span class="badge-cuisine" style="font-size:0.72rem;padding:3px 10px;">{{ saved.recipe_result.cuisine_type }}</span>
-              <span class="{% if saved.recipe_result.result_type == 'extracted_recipe' %}badge-extracted{% else %}badge-estimated{% endif %}" style="font-size:0.72rem;padding:3px 10px;border-radius:20px;border:1px solid;">
-                {% if saved.recipe_result.result_type == 'extracted_recipe' %}✦ Extracted{% else %}~ Estimated{% endif %}
-              </span>
+        <!-- Subscription Card -->
+        <div class="profile-card reveal" style="border: 2px solid var(--accent-orange);">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <h4 class="mb-0" style="font-size:1rem;font-weight:700;">Subscription</h4>
+            <span class="plan-badge-pro" style="padding:2px 8px;font-size:0.7rem;">{{ plan.display_name|default:"Free" }}</span>
+          </div>
+          <div class="subscription-status mb-3">
+            <div class="small text-muted mb-1">{{ date_label }}</div>
+            <div class="fw-bold" style="color:var(--accent-orange);">{{ next_date|date:"M d, Y" }}</div>
+          </div>
+          {% if plan and plan.generation_limit != -1 %}
+          <div class="usage-tracker mb-3">
+            <div class="d-flex justify-content-between small mb-1">
+                <span>Usage</span>
+                <span>{{ subscription.generations_used }} / {{ plan.generation_limit }}</span>
             </div>
-            <div class="history-card-meta">{{ saved.saved_at|date:"M d, Y" }}</div>
-          </a>
+            <div class="progress" style="height:6px;background:rgba(255,255,255,0.1);">
+                <div class="progress-bar" style="width:{% widthratio subscription.generations_used plan.generation_limit 100 %}%; background:var(--accent-orange);"></div>
+            </div>
+          </div>
+          {% endif %}
+          <a href="{% url 'pricing' %}" class="btn-primary-cta py-2 text-center w-100 d-block text-white" style="text-decoration:none;font-size:0.85rem;">Manage Plan</a>
         </div>
-        {% endfor %}
+      </div>
+
+      <!-- Main Content -->
+      <div class="col-lg-9">
+        <!-- Stats Row -->
+        <div class="row g-3 mb-4">
+          <div class="col-md-4 reveal">
+            <div class="profile-stat-card">
+              <div class="profile-stat-num">{{ total_analyzed }}</div>
+              <div class="profile-stat-label">Decoded Videos</div>
+            </div>
+          </div>
+          <div class="col-md-4 reveal">
+            <div class="profile-stat-card">
+              <div class="profile-stat-num">{{ total_saved }}</div>
+              <div class="profile-stat-label">Saved Favorites</div>
+            </div>
+          </div>
+          <div class="col-md-4 reveal">
+            <div class="profile-stat-card">
+              <div class="profile-stat-num">{{ avg_confidence }}%</div>
+              <div class="profile-stat-label">AI Confidence</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- History Tabs -->
+        <div class="profile-tabs-container reveal mb-4">
+            <ul class="nav nav-tabs border-0" id="profileTabs" role="tablist">
+                <li class="nav-item">
+                    <button class="nav-link active" id="history-tab" data-bs-toggle="tab" data-bs-target="#history" type="button">🎬 Generation History</button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link" id="saved-tab" data-bs-toggle="tab" data-bs-target="#saved" type="button">❤️ Saved Recipes</button>
+                </li>
+            </ul>
+        </div>
+
+        <div class="tab-content" id="profileTabsContent">
+            <!-- Generation History Tab -->
+            <div class="tab-pane fade show active" id="history">
+                <div class="row g-3">
+                    {% for gen in generation_history %}
+                    <div class="col-md-6">
+                        <a href="{% url 'recipe_detail' gen.pk %}" class="history-card">
+                            <div class="history-card-dish">{{ gen.dish_name }}</div>
+                            <div class="d-flex gap-2 mb-2 flex-wrap">
+                                <span class="badge-cuisine" style="font-size:0.72rem;">{{ gen.cuisine_type }}</span>
+                                <span class="badge-extracted" style="font-size:0.72rem;">{{ gen.result_type|replace:"_, "|title }}</span>
+                            </div>
+                            <div class="history-card-meta">{{ gen.created_at|date:"M d, Y" }}</div>
+                        </a>
+                    </div>
+                    {% empty %}
+                    <div class="col-12">
+                        <div class="empty-state">
+                            <div class="empty-state-icon text-muted">🎬</div>
+                            <p>No decoed history yet. Start by pasting a video link!</p>
+                            <a href="{% url 'home' %}" class="btn-primary-cta text-decoration-none d-inline-block mt-3">Start Decoding</a>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Saved Recipes Tab -->
+            <div class="tab-pane fade" id="saved">
+                <div class="row g-3">
+                    {% for saved in saved_recipes %}
+                    <div class="col-md-6">
+                        <a href="{% url 'recipe_detail' saved.recipe_result.pk %}" class="history-card">
+                            <div class="history-card-dish">{{ saved.recipe_result.dish_name }}</div>
+                            <div class="d-flex gap-2 mb-2 flex-wrap">
+                                <span class="badge-cuisine" style="font-size:0.72rem;">{{ saved.recipe_result.cuisine_type }}</span>
+                                <span class="badge-extracted" style="font-size:0.72rem;">❤️ Saved</span>
+                            </div>
+                            <div class="history-card-meta">{{ saved.saved_at|date:"M d, Y" }}</div>
+                        </a>
+                    </div>
+                    {% empty %}
+                    <div class="col-12">
+                        <div class="empty-state">
+                            <div class="empty-state-icon text-muted">❤️</div>
+                            <p>You haven't saved any recipes yet.</p>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
       </div>
     </div>
-    {% else %}
-    <div class="empty-state reveal">
-      <div class="empty-state-icon">🍽️</div>
-      <h3>No saved recipes yet</h3>
-      <p>Start decoding food videos to build your recipe collection.</p>
-      <a href="{% url 'home' %}" class="btn-primary-cta mt-3" style="display:inline-block;text-decoration:none;">Decode a Video →</a>
-    </div>
-    {% endif %}
   </div>
 </section>
+
+<style>
+.profile-card {
+    background: rgba(26, 26, 26, 0.4);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 24px;
+    padding: 24px;
+}
+.profile-nav-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.profile-nav-item {
+    padding: 12px 16px;
+    border-radius: 12px;
+    color: rgba(255,255,255,0.7);
+    text-decoration: none;
+    font-size: 0.95rem;
+    transition: all 0.3s ease;
+}
+.profile-nav-item:hover, .profile-nav-item.active {
+    background: rgba(255, 157, 0, 0.1);
+    color: var(--accent-orange);
+}
+.nav-tabs .nav-link {
+    background: transparent;
+    border: none;
+    color: rgba(255,255,255,0.6);
+    padding: 12px 20px;
+    font-weight: 600;
+    font-size: 1rem;
+    border-bottom: 2px solid transparent;
+}
+.nav-tabs .nav-link.active {
+    color: var(--accent-orange);
+    border-bottom-color: var(--accent-orange);
+}
+.empty-state {
+    text-align: center;
+    padding: 40px;
+    background: rgba(255,255,255,0.02);
+    border-radius: 24px;
+    border: 1px dashed rgba(255,255,255,0.1);
+}
+.empty-state-icon { font-size: 2.5rem; margin-bottom: 15px; }
+</style>
 {% endblock %}
