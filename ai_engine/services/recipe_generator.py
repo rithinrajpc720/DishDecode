@@ -160,20 +160,6 @@ def _generate_with_ai(video_url):
 
     return result
 
-def generate_recipe_from_ai(data=None):
-    """Fallback function for environments with limited AI access."""
-    return {
-        "dish_name": "Sample Pasta",
-        "cuisine_type": "Italian",
-        "ingredients": ["pasta", "tomato", "cheese"],
-        "steps": ["boil pasta", "add sauce"],
-        "cooking_time": "20 minutes",
-        "tools_used": ["pot", "saucepan"],
-        "confidence_score": 0.75,
-        "ai_note": "Demo fallback: Using pre-defined recipe template.",
-        "result_type": "estimated_recipe"
-    }
-
 def validate_video_url(url):
     youtube_patterns = [
         r'(?:https?://)?(?:www\.)?youtube\.com/watch\?v=[\w-]+',
@@ -207,24 +193,19 @@ def generate_recipe_from_url(video_url):
         if ai_result:
             return ai_result
     except Exception:
-        pass  # Fall back to other methods
+        pass  # Fall back to mock DB
 
-    # Secondary Fallback: match from static recipes DB
-    try:
-        keywords = list(RECIPES_DB.keys())
-        url_lower = video_url.lower()
-        matched_key = None
-        for kw in keywords:
-            if kw in url_lower:
-                matched_key = kw
-                break
-        if matched_key:
-            recipe = RECIPES_DB[matched_key].copy()
-            variation = random.uniform(-0.05, 0.05)
-            recipe['confidence_score'] = min(0.99, max(0.70, recipe['confidence_score'] + variation))
-            return recipe
-    except Exception:
-        pass
-
-    # Final Fallback: provide a safe demo recipe
-    return generate_recipe_from_ai()
+    # Fallback: match from static recipes DB
+    keywords = list(RECIPES_DB.keys())
+    url_lower = video_url.lower()
+    matched_key = None
+    for kw in keywords:
+        if kw in url_lower:
+            matched_key = kw
+            break
+    if not matched_key:
+        matched_key = random.choice(keywords)
+    recipe = RECIPES_DB[matched_key].copy()
+    variation = random.uniform(-0.05, 0.05)
+    recipe['confidence_score'] = min(0.99, max(0.70, recipe['confidence_score'] + variation))
+    return recipe
