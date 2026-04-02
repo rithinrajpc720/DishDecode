@@ -77,8 +77,10 @@
         <div id="profileDashboard" class="reveal">
           <div class="elite-tabs-wrap mb-4">
             <div class="nav nav-pills elite-tabs" id="pills-tab" role="tablist">
-                <button class="nav-link active" id="pills-history-tab" data-bs-toggle="pill" data-bs-target="#pills-history" type="button" role="tab">🎬 Generation History</button>
-                <button class="nav-link" id="pills-saved-tab" data-bs-toggle="pill" data-bs-target="#pills-saved" type="button" role="tab">❤️ Saved Recipes</button>
+                <button class="nav-link active" id="pills-history-tab" data-bs-toggle="pill" data-bs-target="#pills-history" type="button" role="tab">🎬 History</button>
+                <button class="nav-link" id="pills-saved-tab" data-bs-toggle="pill" data-bs-target="#pills-saved" type="button" role="tab">❤️ Saved</button>
+                <button class="nav-link" id="pills-how-tab" data-bs-toggle="pill" data-bs-target="#pills-how" type="button" role="tab">🚀 Guide</button>
+                <button class="nav-link" id="pills-faq-tab" data-bs-toggle="pill" data-bs-target="#pills-faq" type="button" role="tab">❓ FAQ</button>
             </div>
           </div>
 
@@ -134,6 +136,66 @@
                         <p class="text-muted">Click the heart on any recipe to save it here.</p>
                     </div>
                     {% endfor %}
+                </div>
+            </div>
+
+            <!-- HOW IT WORKS TAB -->
+            <div class="tab-pane fade" id="pills-how" role="tabpanel">
+                <div class="row g-3">
+                    <div class="col-md-6 reveal-staggered">
+                        <div class="step-card h-100">
+                            <div class="step-number" style="width:36px;height:36px;min-width:36px;font-size:0.9rem;">01</div>
+                            <div class="step-content">
+                                <h3 style="font-size:1rem;">Paste Link</h3>
+                                <p style="font-size:0.85rem;line-height:1.5;">Copy any YouTube food video URL and paste it into the input.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6 reveal-staggered">
+                        <div class="step-card h-100">
+                            <div class="step-number" style="width:36px;height:36px;min-width:36px;font-size:0.9rem;">02</div>
+                            <div class="step-content">
+                                <h3 style="font-size:1rem;">AI Analysis</h3>
+                                <p style="font-size:0.85rem;line-height:1.5;">AI examines visual cues and cooking styles to identify components.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6 reveal-staggered">
+                        <div class="step-card h-100">
+                            <div class="step-number" style="width:36px;height:36px;min-width:36px;font-size:0.9rem;">03</div>
+                            <div class="step-content">
+                                <h3 style="font-size:1rem;">Generation</h3>
+                                <p style="font-size:0.85rem;line-height:1.5;">Structured recipes with ingredients and steps appear in seconds.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6 reveal-staggered">
+                        <div class="step-card h-100">
+                            <div class="step-number" style="width:36px;height:36px;min-width:36px;font-size:0.9rem;">04</div>
+                            <div class="step-content">
+                                <h3 style="font-size:1rem;">Save Mode</h3>
+                                <p style="font-size:0.85rem;line-height:1.5;">Save favorites and reference them anytime on any device.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- FAQ TAB -->
+            <div class="tab-pane fade" id="pills-faq" role="tabpanel">
+                <div class="glass-card p-4">
+                    <div class="faq-item mb-2">
+                        <button class="faq-question py-2 fs-6">What videos are supported? <span class="faq-icon">+</span></button>
+                        <div class="faq-answer"><p class="small">YouTube videos and Shorts. reels support coming soon!</p></div>
+                    </div>
+                    <div class="faq-item mb-2">
+                        <button class="faq-question py-2 fs-6">How accurate is the AI? <span class="faq-icon">+</span></button>
+                        <div class="faq-answer"><p class="small">Average score is 87%. We label results as Extracted or Estimated for transparency.</p></div>
+                    </div>
+                    <div class="faq-item mb-0">
+                        <button class="faq-question py-2 fs-6">Is it free to use? <span class="faq-icon">+</span></button>
+                        <div class="faq-answer"><p class="small">Yes, our basic tier is free! Create an account to start decoding.</p></div>
+                    </div>
                 </div>
             </div>
           </div>
