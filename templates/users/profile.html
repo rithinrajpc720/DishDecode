@@ -13,7 +13,8 @@
             <p class="text-muted small mb-0">{{ user.email }}</p>
           </div>
           <div class="profile-nav-list">
-            <a href="{% url 'home' %}" class="profile-nav-link active">🏠 Dashboard</a>
+            <a href="{% url 'home' %}" class="profile-nav-link">🏠 Home</a>
+            <a href="{% url 'profile' %}" class="profile-nav-link active">👤 My Dashboard</a>
             <a href="{% url 'recipe_history' %}" class="profile-nav-link">📜 History</a>
             <a href="{% url 'pricing' %}" class="profile-nav-link">⚡ Upgrade Plan</a>
             <form action="{% url 'logout' %}" method="post" class="mt-2">
