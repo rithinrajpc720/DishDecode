@@ -15,6 +15,8 @@ class RecipeResult(models.Model):
     confidence_score = models.FloatField(default=0.0)
     ai_note = models.TextField(blank=True)
     result_type = models.CharField(max_length=30, choices=RESULT_TYPE_CHOICES, default='estimated_recipe')
+    detected_language = models.CharField(max_length=50, blank=True, default='English')
+    country_of_origin = models.CharField(max_length=100, blank=True, default='Unknown')
     created_at = models.DateTimeField(auto_now_add=True)
 
     def get_ingredients(self):
