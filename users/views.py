@@ -79,8 +79,14 @@ class ProfileView(View):
 
         # Fetch History
         saved_recipes = SavedRecipe.objects.filter(user=request.user).select_related('recipe_result')[:6]
-        # Generation History = RecipeResults from all video requests, completed
-        gen_history = RecipeResult.objects.filter(video_request__user=request.user).order_by('-created_at')[:6]
+        
+        # Generation History with pre-calculated confidence percentages
+        raw_history = RecipeResult.objects.filter(video_request__user=request.user).order_by('-created_at')[:6]
+        gen_history = []
+        for res in raw_history:
+            # Adding a temporary attribute for the percentage
+            res.conf_percent = int(res.confidence_score * 100)
+            gen_history.append(res)
 
         return render(request, 'users/profile.html', {
             'total_analyzed': total_analyzed,

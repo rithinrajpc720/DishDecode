@@ -95,7 +95,7 @@
                             <h4 class="mb-2" style="font-size:1.1rem;font-weight:700;">{{ gen.dish_name }}</h4>
                             <div class="d-flex align-items-center gap-3">
                                 <span class="badge-extracted px-0 bg-transparent border-0" style="font-size:0.75rem;color:var(--accent-orange);">✦ {{ gen.get_result_type_display }}</span>
-                                <span class="small text-muted">Analysis: {{ gen.confidence_score|mul:100|floatformat:0 }}%</span>
+                                <span class="small text-muted">Analysis: {{ gen.conf_percent }}%</span>
                             </div>
                         </a>
                     </div>
@@ -149,7 +149,8 @@
     padding: 12px 16px; border-radius: 12px; color: var(--text-secondary); text-decoration: none; font-size: 0.95rem; font-weight: 500; transition: var(--transition);
 }
 .profile-nav-link:hover, .profile-nav-link.active { 
-    background: rgba(251, 146, 60, 0.1); color: var(--accent-orange) !important;
+    background: rgba(251, 146, 60, 0.1); 
+    color: var(--accent-orange) !important;
 }
 
 /* CUSTOM ELITE TABS */
