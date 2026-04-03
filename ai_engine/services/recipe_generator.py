@@ -153,3 +153,28 @@ def generate_recipe_from_url(video_url):
         "ai_note": "A technical error occurred during video analysis. Fallback triggered.",
         "result_type": "estimated_recipe"
     }
+def validate_video_url(url):
+    youtube_patterns = [
+        r'(?:https?://)?(?:www\.)?youtube\.com/watch\?v=[\w-]+',
+        r'(?:https?://)?youtu\.be/[\w-]+',
+        r'(?:https?://)?(?:www\.)?youtube\.com/shorts/[\w-]+',
+    ]
+    instagram_patterns = [
+        r'(?:https?://)?(?:www\.)?instagram\.com/reel/[\w-]+',
+        r'(?:https?://)?(?:www\.)?instagram\.com/reels/[\w-]+',
+        r'(?:https?://)?(?:www\.)?instagram\.com/p/[\w-]+',
+    ]
+    for pattern in youtube_patterns:
+        if re.match(pattern, url):
+            return True, 'youtube'
+    for pattern in instagram_patterns:
+        if re.match(pattern, url):
+            return True, 'instagram'
+    return False, None
+
+def detect_platform(url):
+    if 'youtube.com' in url or 'youtu.be' in url:
+        return 'youtube'
+    if 'instagram.com' in url:
+        return 'instagram'
+    return 'unknown'
