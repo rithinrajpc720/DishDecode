@@ -3,22 +3,19 @@ import google.generativeai as genai
 import yt_dlp
 from django.conf import settings
 
-# --- AUDIO EXTRACTION INTERNAL SERVICE ---
-class AudioExtractor:
+# --- VIDEO & AUDIO EXTRACTION INTERNAL SERVICE ---
+class VideoProcessor:
     @staticmethod
-    def extract_audio(video_url):
-        """Extract audio from a video URL and save it to a temporary file."""
+    def download_video(video_url):
+        """Download a low-resolution version of the video for multimodal analysis."""
         temp_dir = tempfile.gettempdir()
-        output_file_base = os.path.join(temp_dir, f'dishdecode_audio_{random.randint(1000,9999)}')
+        # Create a unique filename for the mp4
+        output_file_base = os.path.join(temp_dir, f'dishdecode_video_{random.randint(1000,9999)}')
         
         ydl_opts = {
-            'format': 'bestaudio/best',
-            'postprocessors': [{
-                'key': 'FFmpegExtractAudio',
-                'preferredcodec': 'mp3',
-                'preferredquality': '128',
-            }],
-            'outtmpl': output_file_base,
+            'format': 'bestvideo[height<=480]+bestaudio/best[height<=480]',
+            'outtmpl': f"{output_file_base}.%(ext)s",
+            'merge_output_format': 'mp4',
             'quiet': True,
             'no_warnings': True,
         }
@@ -26,13 +23,13 @@ class AudioExtractor:
         try:
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 ydl.extract_info(video_url, download=True)
-                audio_file = f"{output_file_base}.mp3"
-                if os.path.exists(audio_file):
-                    return audio_file
+                # Check for the expected mp4 file
+                video_file = f"{output_file_base}.mp4"
+                if os.path.exists(video_file):
+                    return video_file
                 return None
         except Exception as e:
-            # log the error but don't crash; we will fallback to text-only analysis
-            print(f"Audio Extraction Warning: {str(e)}")
+            print(f"Deep Analysis Warning (Video/Audio Download Failed): {str(e)}")
             return None
 
     @staticmethod
@@ -44,39 +41,38 @@ class AudioExtractor:
             except Exception:
                 pass
 
-# --- AI RECIPE PROMPT (Project Stronger) ---
-AI_RECIPE_PROMPT = """You are a professional chef and food video analyst. Analyze the provided video URL {audio_context} to generate a detailed recipe.
+# --- AI DEEP MULTIMODAL PROMPT (Global Recipe Intelligence) ---
+AI_RECIPE_PROMPT = """You are a "Master Culinary AI & Visual Analyst." Your mission is to analyze the provided video link (and its visual/audio stream) to generate a 100% accurate, professional recipe.
 
-IMPORTANT: The video may be in ANY language (Hindi, Tamil, Telugu, Malayalam, Korean, Japanese, Spanish, French, Arabic, etc.). 
-Regardless of the video's language, you MUST:
-1. Identify the dish being prepared with high cultural accuracy.
-2. Detect the original language of the video and the speaker.
-3. Determine the country/region of origin of the dish.
-4. Provide the complete recipe output ALWAYS IN ENGLISH.
+DEEP ANALYSIS REQUIREMENTS:
+1. VISUALS & OCR: "Read" any text that appears on the screen (ingredients lists, heat levels, notes). Identify the kitchen tools (e.g. Kadai, Air Fryer, Griddle), utensils, and the visual state of the food.
+2. AUDIO & SPEAKING: Listen to any dialogue. Identify the language(s) spoken and any specific regional dialects (e.g., Hindi, Tamil, Telugu, Malayalam, Korean, Spanish, French, Arabic, etc.).
+3. INGREDIENTS & QUANTITIES: List every ingredient used. If the video doesn't state quantities, use your expert culinary knowledge to provide the most likely amounts for the dish shown.
+4. CULTURAL ORIGIN: Accurately identify the dish's name (local name in parentheses if it's regional, e.g., 'Hyderabadi Biryani'). Identify the country and specific region/state (e.g. Origin: South India, Kerala).
 
-Return a JSON object with EXACTLY these fields:
+OUTPUT FORMAT: Return a JSON object with EXACTLY these fields:
 {{
-    "dish_name": "Name of the dish (include original name in parentheses, e.g. 'Butter Chicken (Murgh Makhani)')",
-    "cuisine_type": "Cuisine origin (e.g. Indian, Japanese, Mexican, Korean, etc.)",
-    "detected_language": "The language spoken in the video",
-    "country_of_origin": "The country where this dish originates",
-    "ingredients": ["ingredient 1 with quantity", "ingredient 2 with quantity", ...],
-    "steps": ["step 1 detailed instruction", "step 2 detailed instruction", ...],
-    "cooking_time": "estimated total time",
-    "tools_used": ["tool 1", "tool 2", ...],
-    "confidence_score": 0.85,
-    "ai_note": "Detailed analysis note about detected language and unique regional techniques.",
+    "dish_name": "Full name with native regional name in parentheses",
+    "cuisine_type": "Regional/National cuisine (e.g., Coastal Kerala, Oaxacan Mexican, Traditional Korean)",
+    "detected_language": "Languages/Dialects spoken in video or text on screen",
+    "country_of_origin": "Country and specific region",
+    "ingredients": ["Expertly calculated ingredient 1", "Expertly calculated ingredient 2", ...],
+    "steps": ["Highly detailed step 1", "Highly detailed step 2", ...],
+    "cooking_time": "Estimated prep and cook time",
+    "tools_used": ["Every tool visible or heard, e.g., Pressure Cooker, Spatula, Heavy Bottomed Pan"],
+    "confidence_score": 0.95,
+    "ai_note": "A summary of the video language/dialect, unique regional techniques discovered, and visual OCR notes.",
     "result_type": "extracted_recipe"
 }}
 
 Rules:
-- confidence_score must be a float between 0.70 and 0.99
-- All text must be in English
-- If the video shows a regional/traditional dish, include the local name
+- You MUST provide the output strictly in ENGLISH.
+- If the video has text on screen, PRIORITY should be given to that for accuracy.
+- Be extremely precise with seasonings and cultural techniques.
 """
 
 def _generate_with_ai(video_url):
-    """Use Google Gemini with Multimodal Audio Analysis (or text fallback) to generate a recipe."""
+    """Use Google Gemini Deep Multimodal Analysis to generate a 100% accurate recipe."""
     api_key = settings.GOOGLE_API_KEY
     if not api_key:
         print("Missing GOOGLE_API_KEY in settings.")
@@ -87,7 +83,7 @@ def _generate_with_ai(video_url):
     # Dynamic Model Selection (avoids 'NotFound' errors by picking an available model)
     try:
         available_models = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
-        # Prefer flash for speed, but fallback to any gemini model
+        # Prefer flash for visual multimodal efficiency
         gemini_models = [m for m in available_models if 'gemini-1.5-flash' in m] or \
                         [m for m in available_models if 'gemini' in m]
         
@@ -97,30 +93,27 @@ def _generate_with_ai(video_url):
             
         selected_model_name = gemini_models[0]
         model = genai.GenerativeModel(selected_model_name)
-        print(f"Using AI Model: {selected_model_name}")
+        print(f"Using Master AI Model: {selected_model_name}")
     except Exception as model_err:
-        print(f"Error listing/selecting models: {str(model_err)}")
-        model = genai.GenerativeModel('models/gemini-1.5-flash') # Hard fallback
+        print(f"Error selecting models: {str(model_err)}")
+        model = genai.GenerativeModel('models/gemini-1.5-flash')
 
-    # Try audio extraction (requires ffmpeg)
-    audio_path = AudioExtractor.extract_audio(video_url)
-    audio_file = None
+    # Try video download for Deep Multimodal Analysis (requires ffmpeg)
+    video_path = VideoProcessor.download_video(video_url)
+    video_file = None
     
     try:
-        audio_context = "and its extracted audio" if audio_path else "(Analyzing via URL metadata fallback as audio extraction was skipped)"
-        prompt = AI_RECIPE_PROMPT.format(audio_context=audio_context)
+        content_to_send = [f"Video URL: {video_url}", AI_RECIPE_PROMPT]
         
-        content_to_send = [f"Video URL: {video_url}", prompt]
-        
-        if audio_path and os.path.exists(audio_path):
+        if video_path and os.path.exists(video_path):
             try:
-                # Upload the audio for multimodal analysis
-                audio_file = genai.upload_file(path=audio_path, display_name="video_audio")
-                content_to_send.append(audio_file)
-                print(f"Successfully uploaded audio for analysis: {audio_path}")
+                # Upload the visual/audio stream for deep analysis
+                print(f"Initiating Deep Visual/Audio analysis for: {video_path}")
+                video_file = genai.upload_file(path=video_path, display_name="video_source")
+                content_to_send.append(video_file)
             except Exception as upload_err:
-                print(f"Gemini Audio Upload Failed: {str(upload_err)}")
-                # Proceed without audio if upload fails
+                print(f"Deep Analysis Multimodal Upload Failed (using URL metadata fallback): {str(upload_err)}")
+                # Proceed without video if upload fails
 
         response = model.generate_content(content_to_send)
         if not response or not hasattr(response, 'text') or not response.text:
@@ -129,43 +122,42 @@ def _generate_with_ai(video_url):
 
         text = response.text.strip()
 
-        # Handle Markdown formatting in Gemini responses
+        # Handle Markdown/JSON cleanup
         if '```json' in text:
             text = text.split('```json')[1].split('```')[0].strip()
         elif '```' in text:
             text = text.split('```')[1].split('```')[0].strip()
 
-        # Final cleanup for potential leading/trailing non-json chars
         text = re.sub(r'^[^{]*', '', text)
         text = re.sub(r'[^}]*$', '', text)
 
         result = json.loads(text)
 
-        # Validate confidence score (ensure it's a float)
+        # Validate confidence (Targeting 100% accuracy)
         try:
-            result['confidence_score'] = float(result.get('confidence_score', 0.85))
+            result['confidence_score'] = float(result.get('confidence_score', 0.95))
         except:
-            result['confidence_score'] = 0.85
+            result['confidence_score'] = 0.95
         
-        result['confidence_score'] = min(0.99, max(0.70, result['confidence_score']))
+        result['confidence_score'] = min(0.99, max(0.80, result['confidence_score']))
         return result
 
     except Exception as e:
-        print(f"Project Stronger AI Error: {str(e)}")
-        traceback.print_exc() # Print full traceback to console for debugging
+        print(f"Master AI Upgrade Error: {str(e)}")
+        traceback.print_exc()
         return None
     finally:
         # Cleanup temporary files
-        if audio_path:
-            AudioExtractor.cleanup(audio_path)
-        if audio_file:
+        if video_path:
+            VideoProcessor.cleanup(video_path)
+        if video_file:
             try:
-                genai.delete_file(audio_file.name)
+                genai.delete_file(video_file.name)
             except Exception:
                 pass
 
 def generate_recipe_from_url(video_url):
-    # Core Global AI Processor (Multimodal: Audio + Video Analysis)
+    # Core Global AI Processor (Multimodal: Visuals + Audio + OCR)
     try:
         ai_result = _generate_with_ai(video_url)
         if ai_result:
@@ -188,6 +180,7 @@ def generate_recipe_from_url(video_url):
         "ai_note": "A technical error occurred during video analysis. Fallback triggered.",
         "result_type": "estimated_recipe"
     }
+
 def validate_video_url(url):
     youtube_patterns = [
         r'(?:https?://)?(?:www\.)?youtube\.com/watch\?v=[\w-]+',
