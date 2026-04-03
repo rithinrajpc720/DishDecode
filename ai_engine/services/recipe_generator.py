@@ -1,4 +1,4 @@
-import json, random, re, os, tempfile
+import json, random, re, os, tempfile, traceback
 import google.generativeai as genai
 import yt_dlp
 from django.conf import settings
@@ -25,15 +25,14 @@ class AudioExtractor:
 
         try:
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-                info = ydl.extract_info(video_url, download=True)
-                # yt-dlp prepare_filename might not reflect the postprocessed .mp3 extension easily
-                # so we just look for the expected file in the temp dir.
+                ydl.extract_info(video_url, download=True)
                 audio_file = f"{output_file_base}.mp3"
                 if os.path.exists(audio_file):
                     return audio_file
                 return None
         except Exception as e:
-            print(f"Error extracting audio: {str(e)}")
+            # log the error but don't crash; we will fallback to text-only analysis
+            print(f"Audio Extraction Warning: {str(e)}")
             return None
 
     @staticmethod
@@ -46,7 +45,7 @@ class AudioExtractor:
                 pass
 
 # --- AI RECIPE PROMPT (Project Stronger) ---
-AI_RECIPE_PROMPT = """You are a professional chef and food video analyst. Analyze the provided video audio and URL to generate a detailed recipe.
+AI_RECIPE_PROMPT = """You are a professional chef and food video analyst. Analyze the provided video URL {audio_context} to generate a detailed recipe.
 
 IMPORTANT: The video may be in ANY language (Hindi, Tamil, Telugu, Malayalam, Korean, Japanese, Spanish, French, Arabic, etc.). 
 Regardless of the video's language, you MUST:
@@ -77,27 +76,57 @@ Rules:
 """
 
 def _generate_with_ai(video_url):
-    """Use Google Gemini with Multimodal Audio Analysis to generate a recipe."""
+    """Use Google Gemini with Multimodal Audio Analysis (or text fallback) to generate a recipe."""
     api_key = settings.GOOGLE_API_KEY
     if not api_key:
+        print("Missing GOOGLE_API_KEY in settings.")
         return None
 
     genai.configure(api_key=api_key)
-    # Using 1.5-flash for speed and multimodal efficiency
-    model = genai.GenerativeModel('gemini-1.5-flash')
+    
+    # Dynamic Model Selection (avoids 'NotFound' errors by picking an available model)
+    try:
+        available_models = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
+        # Prefer flash for speed, but fallback to any gemini model
+        gemini_models = [m for m in available_models if 'gemini-1.5-flash' in m] or \
+                        [m for m in available_models if 'gemini' in m]
+        
+        if not gemini_models:
+            print("No Gemini-compatible models found for this API key.")
+            return None
+            
+        selected_model_name = gemini_models[0]
+        model = genai.GenerativeModel(selected_model_name)
+        print(f"Using AI Model: {selected_model_name}")
+    except Exception as model_err:
+        print(f"Error listing/selecting models: {str(model_err)}")
+        model = genai.GenerativeModel('models/gemini-1.5-flash') # Hard fallback
 
+    # Try audio extraction (requires ffmpeg)
     audio_path = AudioExtractor.extract_audio(video_url)
     audio_file = None
     
     try:
-        content_to_send = [AI_RECIPE_PROMPT.format(video_url=video_url)]
+        audio_context = "and its extracted audio" if audio_path else "(Analyzing via URL metadata fallback as audio extraction was skipped)"
+        prompt = AI_RECIPE_PROMPT.format(audio_context=audio_context)
+        
+        content_to_send = [f"Video URL: {video_url}", prompt]
         
         if audio_path and os.path.exists(audio_path):
-            # Upload the audio for multimodal analysis
-            audio_file = genai.upload_file(path=audio_path, display_name="video_audio")
-            content_to_send.append(audio_file)
+            try:
+                # Upload the audio for multimodal analysis
+                audio_file = genai.upload_file(path=audio_path, display_name="video_audio")
+                content_to_send.append(audio_file)
+                print(f"Successfully uploaded audio for analysis: {audio_path}")
+            except Exception as upload_err:
+                print(f"Gemini Audio Upload Failed: {str(upload_err)}")
+                # Proceed without audio if upload fails
 
         response = model.generate_content(content_to_send)
+        if not response or not hasattr(response, 'text') or not response.text:
+            print(f"Gemini returned an invalid response. Full response: {response}")
+            return None
+
         text = response.text.strip()
 
         # Handle Markdown formatting in Gemini responses
@@ -105,6 +134,10 @@ def _generate_with_ai(video_url):
             text = text.split('```json')[1].split('```')[0].strip()
         elif '```' in text:
             text = text.split('```')[1].split('```')[0].strip()
+
+        # Final cleanup for potential leading/trailing non-json chars
+        text = re.sub(r'^[^{]*', '', text)
+        text = re.sub(r'[^}]*$', '', text)
 
         result = json.loads(text)
 
@@ -119,6 +152,7 @@ def _generate_with_ai(video_url):
 
     except Exception as e:
         print(f"Project Stronger AI Error: {str(e)}")
+        traceback.print_exc() # Print full traceback to console for debugging
         return None
     finally:
         # Cleanup temporary files
@@ -138,6 +172,7 @@ def generate_recipe_from_url(video_url):
             return ai_result
     except Exception as e:
         print(f"Final AI fallback triggered: {str(e)}")
+        traceback.print_exc()
     
     # Static fallback for resilience
     return {
